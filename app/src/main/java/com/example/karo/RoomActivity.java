@@ -8,6 +8,8 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -21,6 +23,8 @@ import com.example.karo.model.Room;
 import com.example.karo.model.User;
 import com.example.karo.utility.CommonLogic;
 import com.example.karo.utility.Const;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -217,6 +221,16 @@ public class RoomActivity extends AppCompatActivity {
     protected void onDestroy() {
         roomListenerRegistration.remove();
         super.onDestroy();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
     }
 
     private void handleReceivePickCell(int pickCell) {
@@ -557,4 +571,9 @@ public class RoomActivity extends AppCompatActivity {
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
     }
+
+    private void checkCurrentUserState() {
+
+    }
+
 }

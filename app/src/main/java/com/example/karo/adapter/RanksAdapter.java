@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,7 +57,7 @@ public class RanksAdapter extends RecyclerView.Adapter<RanksAdapter.ViewHolder> 
         holder.txtRankerUsername.setText(user.getUsername());
         holder.txtRankerInfo.setText(String.format("Score: %d - Rank: %d", user.getScore(), user.getRank()));
         holder.imgRankerAvatar.setImageBitmap(user.getAvatarBitmap());
-
+        holder.txtEmail.setText(user.getEmail());
         // hide button Fight! on item of current user
         if (user.getEmail().equals(currentUserEmail)) {
             holder.btnRankerFight.setVisibility(View.GONE);
@@ -76,6 +77,7 @@ public class RanksAdapter extends RecyclerView.Adapter<RanksAdapter.ViewHolder> 
         ImageView imgRankerAvatar;
         ImageButton btnRankerFight;
         ConstraintLayout cvRankerBackground;
+        TextView txtEmail;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -84,13 +86,14 @@ public class RanksAdapter extends RecyclerView.Adapter<RanksAdapter.ViewHolder> 
             imgRankerAvatar = itemView.findViewById(R.id.imgRankerAvatar);
             btnRankerFight = itemView.findViewById(R.id.btnRankerFight);
             cvRankerBackground = itemView.findViewById(R.id.cvRankerBackground);
-
+            txtEmail = itemView.findViewById(R.id.textView14);
             // when current user click Fight! to somebody
             btnRankerFight.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     // create new room
-                    CommonLogic.createRoom(itemView.getContext(), currentUserEmail);
+                    String otherEmail = txtEmail.getText().toString();
+                    CommonLogic.createRoomWithInvitation(itemView.getContext(), currentUserEmail, otherEmail);
                 }
             });
         }

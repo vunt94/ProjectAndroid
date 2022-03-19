@@ -2,8 +2,8 @@ package com.example.karo.ui.rooms;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -96,7 +96,6 @@ public class RoomsFragment extends Fragment implements ISendStateToRoom {
             for (DocumentChange documentChange : value.getDocumentChanges()) {
                 RoomDetail roomDetail = new RoomDetail();
                 DocumentSnapshot document = documentChange.getDocument();
-
                 // get state change data
                 int stateChangeData = -2;
                 switch (documentChange.getType()) {
@@ -127,12 +126,15 @@ public class RoomsFragment extends Fragment implements ISendStateToRoom {
                         , Integer.parseInt(Objects.requireNonNull(map.get(Const.KEY_PLAYER_ROLE_X_STATE)).toString())
                         , Integer.parseInt(Objects.requireNonNull(map.get(Const.KEY_PLAYER_ROLE_O_STATE)).toString())
                 );
-
-                roomDetail.setRoom(room);
-                roomDetail.setRoomDocument(document.getId());
-                loadUserRoleXInfo(roomDetail, stateChangeData);
+//                if (room.getPlayerRoleXEmail().isEmpty()) {
+//                    CommonLogic.deleteRoom(requireContext(),document.getId());
+//                }
+//                else {
+                    roomDetail.setRoom(room);
+                    roomDetail.setRoomDocument(document.getId());
+                    loadUserRoleXInfo(roomDetail, stateChangeData);
+                //}
             }
-
         });
     }
 
