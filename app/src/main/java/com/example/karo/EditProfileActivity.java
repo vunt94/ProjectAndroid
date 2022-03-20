@@ -17,6 +17,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,8 +25,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.karo.model.User;
 import com.example.karo.utility.CommonLogic;
 import com.example.karo.utility.Const;
+import com.example.karo.utility.MyInterface;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Transaction;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -33,7 +40,9 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class EditProfileActivity extends AppCompatActivity {
 
@@ -47,6 +56,7 @@ public class EditProfileActivity extends AppCompatActivity {
     private boolean isChangeAvatar = false;
     private String currentUserDocument;
     private String avatarRefPicked;
+
 
     public Activity getActivity() {
         return this;
@@ -149,5 +159,37 @@ public class EditProfileActivity extends AppCompatActivity {
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void checkUsernameExist(MyInterface myInterface) {
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        CollectionReference collectionReference = firestore.collection("USERS");
+        Task<QuerySnapshot> snapshotTask = collectionReference.get();
+        snapshotTask.addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    boolean flag = false;
+                    QuerySnapshot query = task.getResult();
+                    List<DocumentSnapshot> list = query.getDocuments();
+                    String currentUsername = txtCurrentUsername.getText().toString();
+                    for (DocumentSnapshot doc : list) {
+                       if (currentUsername.toLowerCase().equals(doc.get("username").toString().toLowerCase())) {
+                           flag = false;
+                           break;
+                       }
+                       // Anonymous3
+                       else if (currentUsername.matches("^((Anonymous))\\d+")) {
+                           flag = false;
+                           break;
+                       }
+                       else {
+                           flag = true;
+                       }
+                    }
+                    myInterface.callback(flag);
+                }
+            }
+        });
     }
 }

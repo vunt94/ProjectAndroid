@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 
 import com.example.karo.HomeActivity;
@@ -25,6 +26,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
@@ -34,7 +37,9 @@ import com.google.firebase.storage.StorageReference;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -43,6 +48,8 @@ import java.util.regex.Pattern;
 import static android.content.Context.MODE_PRIVATE;
 
 public class CommonLogic {
+
+    private MyInterface myInterface;
 
     public static void gotoLoginScreen(Context context) {
         // intent to MainActivity
@@ -136,27 +143,59 @@ public class CommonLogic {
             return;
         }
 
+        MyInterface myInterface = new MyInterface() {
+            @Override
+            public void callback(int count) {
+                User user = new User(email, password, Const.DEFAULT_USERNAME + (count+1), Const.DEFAULT_AVATAR_REF, Const.DEFAULT_SCORE);
+                // Check existence
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                db.collection(Const.COLLECTION_USERS)
+                        .whereEqualTo(Const.KEY_EMAIL, email)
+                        .get()
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                QuerySnapshot querySnapshot = task.getResult();
+                                int numberOfAccHasEmail = querySnapshot != null ? querySnapshot.size() : 0;
+                                if (numberOfAccHasEmail > 0) {
+                                    CommonLogic.makeToast(context, "This email has already registered. Please choose another email");
+                                } else {
+                                    signUpAccount(context, user);
+                                }
+                            } else {
+                                CommonLogic.makeToast(context, "Error: " + task.getException());
+                            }
+                        });
+            }
+
+            @Override
+            public void callback(boolean flag) {
+
+            }
+
+        };
+        getNumberOfUser(myInterface);
+
         // Arrange data
-        User user = new User(email, password, Const.DEFAULT_USERNAME, Const.DEFAULT_AVATAR_REF, Const.DEFAULT_SCORE);
+//        User user = new User(email, password, Const.DEFAULT_USERNAME, Const.DEFAULT_AVATAR_REF, Const.DEFAULT_SCORE);
 
         // Check existence
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection(Const.COLLECTION_USERS)
-                .whereEqualTo(Const.KEY_EMAIL, email)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        QuerySnapshot querySnapshot = task.getResult();
-                        int numberOfAccHasEmail = querySnapshot != null ? querySnapshot.size() : 0;
-                        if (numberOfAccHasEmail > 0) {
-                            CommonLogic.makeToast(context, "This email has already registered. Please choose another email");
-                        } else {
-                            signUpAccount(context, user);
-                        }
-                    } else {
-                        CommonLogic.makeToast(context, "Error: " + task.getException());
-                    }
-                });
+//        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//        db.collection(Const.COLLECTION_USERS)
+//                .whereEqualTo(Const.KEY_EMAIL, email)
+//                .get()
+//                .addOnCompleteListener(task -> {
+//                    if (task.isSuccessful()) {
+//                        QuerySnapshot querySnapshot = task.getResult();
+//                        int numberOfAccHasEmail = querySnapshot != null ? querySnapshot.size() : 0;
+//                        if (numberOfAccHasEmail > 0) {
+//                            CommonLogic.makeToast(context, "This email has already registered. Please choose another email");
+//                        } else {
+//                            signUpAccount(context, user);
+//                        }
+//                    } else {
+//                        CommonLogic.makeToast(context, "Error: " + task.getException());
+//                    }
+//                });
     }
 
     public static void signUpAccount(Context context, User user) {
@@ -405,4 +444,27 @@ public class CommonLogic {
 
         return false;
     }
+
+    public static void getNumberOfUser(MyInterface myInterface) {
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        CollectionReference collectionReference = firestore.collection("USERS");
+        Task<QuerySnapshot> snapshotTask = collectionReference.get();
+        snapshotTask.addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    int count = 0;
+                    QuerySnapshot query = task.getResult();
+                    List<DocumentSnapshot> list = query.getDocuments();
+                    List<User> listProduct = new ArrayList<>();
+                    for (DocumentSnapshot doc : list) {
+                        count++;
+                    }
+                    myInterface.callback(count);
+                }
+            }
+        });
+    }
+
+
 }
