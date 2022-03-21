@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface MyInterface {
     void callback(int count);
-    void callback(boolean flag);
+    void callback(boolean flag, boolean flag2);
 }

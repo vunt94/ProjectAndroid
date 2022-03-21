@@ -16,6 +16,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -114,33 +115,60 @@ public class EditProfileActivity extends AppCompatActivity {
     private void updateCurrentUser() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference currentUserRef = db.collection(Const.COLLECTION_USERS).document(currentUserDocument);
-        db.runTransaction((Transaction.Function<Void>) transaction -> {
-            // update to firebase cloud
-            if (isChangeAvatar) {
-                transaction.update(currentUserRef, Const.KEY_AVATAR_REF, avatarRefPicked);
+        MyInterface myInterface = new MyInterface() {
+            @Override
+            public void callback(int count) {
+
             }
-            transaction.update(currentUserRef, Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
-            // update cache
-            SharedPreferences prefs = getSharedPreferences(Const.XML_NAME_CURRENT_USER, MODE_PRIVATE);
-            SharedPreferences.Editor editor = prefs.edit();
-            if (isChangeAvatar) {
-                editor.putString(Const.KEY_AVATAR_REF, avatarRefPicked);
+
+            @Override
+            public void callback(boolean flag, boolean flag2) {
+                System.out.println("Flag2: " + flag2);
+                if (flag && flag2) {
+                    db.runTransaction((Transaction.Function<Void>) transaction -> {
+                        // update to firebase cloud
+                        if (isChangeAvatar) {
+                            transaction.update(currentUserRef, Const.KEY_AVATAR_REF, avatarRefPicked);
+                        }
+                        transaction.update(currentUserRef, Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
+                        // update cache
+                        SharedPreferences prefs = getSharedPreferences(Const.XML_NAME_CURRENT_USER, MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        if (isChangeAvatar) {
+                            editor.putString(Const.KEY_AVATAR_REF, avatarRefPicked);
+                        }
+                        editor.putString(Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
+                        editor.commit();
+                        return null;
+                    }).addOnSuccessListener(aVoid -> {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                        builder.setTitle("Got it!");
+                        builder.setMessage("Updated successfully!");
+                        builder.setIcon(R.drawable.karo);
+                        builder.setCancelable(false);
+                        builder.setPositiveButton("OK", (dialog, which) -> {
+                            Intent intent = new Intent(getActivity(), HomeActivity.class);
+                            startActivity(intent);
+                        });
+                        builder.show();
+                    }).addOnFailureListener(e ->
+//                            CommonLogic.makeToast(this, "Transaction failure: " + e.getMessage())
+                            showMessage("Transaction failure: " + e.getMessage())
+                    );
+                }
+                else if (!flag2 && flag){
+                    showMessage("Username already exist");
+                }
+                else if (!flag) {
+                    showMessage("You cannot change the name like the default name ");
+                }
             }
-            editor.putString(Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
-            editor.commit();
-            return null;
-        }).addOnSuccessListener(aVoid -> {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setTitle("Got it!");
-            builder.setMessage("Updated successfully!");
-            builder.setIcon(R.drawable.karo);
-            builder.setCancelable(false);
-            builder.setPositiveButton("OK", (dialog, which) -> {
-                Intent intent = new Intent(getActivity(), HomeActivity.class);
-                startActivity(intent);
-            });
-            builder.show();
-        }).addOnFailureListener(e -> CommonLogic.makeToast(this, "Transaction failure: " + e.getMessage()));
+        };
+        checkUsernameExist(myInterface);
+    }
+
+    private void showMessage(String message) {
+        CommonLogic.makeToast(this, message);
     }
 
     @Override
@@ -170,12 +198,13 @@ public class EditProfileActivity extends AppCompatActivity {
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
                     boolean flag = false;
+                    boolean flag2 = false;
                     QuerySnapshot query = task.getResult();
                     List<DocumentSnapshot> list = query.getDocuments();
                     String currentUsername = txtCurrentUsername.getText().toString();
                     for (DocumentSnapshot doc : list) {
                        if (currentUsername.toLowerCase().equals(doc.get("username").toString().toLowerCase())) {
-                           flag = false;
+                           flag2 = false;
                            break;
                        }
                        // Anonymous3
@@ -184,10 +213,11 @@ public class EditProfileActivity extends AppCompatActivity {
                            break;
                        }
                        else {
+                           flag2 = true;
                            flag = true;
                        }
                     }
-                    myInterface.callback(flag);
+                    myInterface.callback(flag, flag2);
                 }
             }
         });

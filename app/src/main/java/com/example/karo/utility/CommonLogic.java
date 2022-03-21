@@ -168,7 +168,7 @@ public class CommonLogic {
             }
 
             @Override
-            public void callback(boolean flag) {
+            public void callback(boolean flag, boolean flag2) {
 
             }
 
