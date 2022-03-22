@@ -57,7 +57,7 @@ public class EditProfileActivity extends AppCompatActivity {
     private boolean isChangeAvatar = false;
     private String currentUserDocument;
     private String avatarRefPicked;
-
+    private boolean isChangeName = false;
 
     public Activity getActivity() {
         return this;
@@ -110,11 +110,12 @@ public class EditProfileActivity extends AppCompatActivity {
         btnSave.setOnClickListener(v -> {
             updateCurrentUser();
         });
+
     }
 
     private void updateCurrentUser() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference currentUserRef = db.collection(Const.COLLECTION_USERS).document(currentUserDocument);
+//        FirebaseFirestore db = FirebaseFirestore.getInstance();
+//        DocumentReference currentUserRef = db.collection(Const.COLLECTION_USERS).document(currentUserDocument);
         MyInterface myInterface = new MyInterface() {
             @Override
             public void callback(int count) {
@@ -122,49 +123,74 @@ public class EditProfileActivity extends AppCompatActivity {
             }
 
             @Override
-            public void callback(boolean flag, boolean flag2) {
-                System.out.println("Flag2: " + flag2);
-                if (flag && flag2) {
-                    db.runTransaction((Transaction.Function<Void>) transaction -> {
-                        // update to firebase cloud
-                        if (isChangeAvatar) {
-                            transaction.update(currentUserRef, Const.KEY_AVATAR_REF, avatarRefPicked);
-                        }
-                        transaction.update(currentUserRef, Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
-                        // update cache
-                        SharedPreferences prefs = getSharedPreferences(Const.XML_NAME_CURRENT_USER, MODE_PRIVATE);
-                        SharedPreferences.Editor editor = prefs.edit();
-                        if (isChangeAvatar) {
-                            editor.putString(Const.KEY_AVATAR_REF, avatarRefPicked);
-                        }
-                        editor.putString(Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
-                        editor.commit();
-                        return null;
-                    }).addOnSuccessListener(aVoid -> {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                        builder.setTitle("Got it!");
-                        builder.setMessage("Updated successfully!");
-                        builder.setIcon(R.drawable.karo);
-                        builder.setCancelable(false);
-                        builder.setPositiveButton("OK", (dialog, which) -> {
-                            Intent intent = new Intent(getActivity(), HomeActivity.class);
-                            startActivity(intent);
-                        });
-                        builder.show();
-                    }).addOnFailureListener(e ->
-//                            CommonLogic.makeToast(this, "Transaction failure: " + e.getMessage())
-                            showMessage("Transaction failure: " + e.getMessage())
-                    );
+            public void callback(boolean flagDefaultName, boolean flagCurrentName) {
+                // flag = false -> currentUsername same default name
+                // flag2 = false -> currentUsername exist
+
+                // name valid
+                if (flagDefaultName && flagCurrentName) {
+                    updateProfile();
                 }
-                else if (!flag2 && flag){
-                    showMessage("Username already exist");
+                // currentUsername is name different default name
+                // ex: huy
+                else if (!flagCurrentName){
+                    // user change name same the name already exist
+                    if (!currentUser.getUsername().toLowerCase().equals(txtCurrentUsername.getText().toString().toLowerCase())) {
+                        showMessage("Username already exist");
+                    }
+                    // user just change photo
+                    else {
+                        updateProfile();
+                    }
                 }
-                else if (!flag) {
-                    showMessage("You cannot change the name like the default name ");
+                // currentUsername same default name
+                // ex: Anonymous4
+                else if (!flagDefaultName) {
+                    if (!currentUser.getUsername().toLowerCase().equals(txtCurrentUsername.getText().toString().toLowerCase())) {
+                        showMessage("You cannot change the name like the default name ");
+                    }
+                    else {
+                        updateProfile();
+                    }
                 }
             }
         };
         checkUsernameExist(myInterface);
+    }
+
+    private void updateProfile() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference currentUserRef = db.collection(Const.COLLECTION_USERS).document(currentUserDocument);
+        db.runTransaction((Transaction.Function<Void>) transaction -> {
+            // update to firebase cloud
+            if (isChangeAvatar) {
+                transaction.update(currentUserRef, Const.KEY_AVATAR_REF, avatarRefPicked);
+            }
+            transaction.update(currentUserRef, Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
+            // update cache
+            SharedPreferences prefs = getSharedPreferences(Const.XML_NAME_CURRENT_USER, MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            if (isChangeAvatar) {
+                editor.putString(Const.KEY_AVATAR_REF, avatarRefPicked);
+            }
+            editor.putString(Const.KEY_USERNAME, txtCurrentUsername.getText().toString());
+            editor.commit();
+            return null;
+        }).addOnSuccessListener(aVoid -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle("Got it!");
+            builder.setMessage("Updated successfully!");
+            builder.setIcon(R.drawable.karo);
+            builder.setCancelable(false);
+            builder.setPositiveButton("OK", (dialog, which) -> {
+                Intent intent = new Intent(getActivity(), HomeActivity.class);
+                startActivity(intent);
+            });
+            builder.show();
+        }).addOnFailureListener(e ->
+//                            CommonLogic.makeToast(this, "Transaction failure: " + e.getMessage())
+                        showMessage("Transaction failure: " + e.getMessage())
+        );
     }
 
     private void showMessage(String message) {
@@ -184,7 +210,9 @@ public class EditProfileActivity extends AppCompatActivity {
                             Const.AVATARS_SOURCE_INTERNAL_PATH + avatarRefPicked);
                     imgCurrentAvatar.setImageBitmap(bitmap);
                 }
+
             }
+
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -197,27 +225,27 @@ public class EditProfileActivity extends AppCompatActivity {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
-                    boolean flag = false;
-                    boolean flag2 = false;
+                    boolean flagDefaultName = true;
+                    boolean flagCurrentName = true;
                     QuerySnapshot query = task.getResult();
                     List<DocumentSnapshot> list = query.getDocuments();
                     String currentUsername = txtCurrentUsername.getText().toString();
                     for (DocumentSnapshot doc : list) {
                        if (currentUsername.toLowerCase().equals(doc.get("username").toString().toLowerCase())) {
-                           flag2 = false;
+                           flagCurrentName = false;
                            break;
                        }
                        // Anonymous3
                        else if (currentUsername.matches("^((Anonymous))\\d+")) {
-                           flag = false;
+                           flagDefaultName = false;
                            break;
                        }
                        else {
-                           flag2 = true;
-                           flag = true;
+                           flagCurrentName = true;
+                           flagDefaultName = true;
                        }
                     }
-                    myInterface.callback(flag, flag2);
+                    myInterface.callback(flagDefaultName, flagCurrentName);
                 }
             }
         });

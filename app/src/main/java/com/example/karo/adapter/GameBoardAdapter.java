@@ -74,6 +74,7 @@ public class GameBoardAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         CellView cellView;
+
         // get view
         if (convertView == null) {
             convertView = LayoutInflater.from(parent.getContext()).inflate(R.layout.component_cell, parent, false);
@@ -99,6 +100,7 @@ public class GameBoardAdapter extends BaseAdapter {
         } else {
             cellView.imgBorderVertical.setVisibility(View.VISIBLE);
         }
+        System.out.println("Da bam");
         // set token
         if (cell.getToken().equals(Const.TOKEN_X)) {
             cellView.imgToken.setForeground(context.getResources().getDrawable(R.drawable.icon_x));
