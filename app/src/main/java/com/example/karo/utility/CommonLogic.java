@@ -301,6 +301,23 @@ public class CommonLogic {
                 .addOnFailureListener(e -> CommonLogic.makeToast(context, "Error: " + e));
     }
 
+    public static void createRoomWithInvitation(Context context, String currentUserEmail, String userInvitedEmail) {
+        Room room = new Room(currentUserEmail, userInvitedEmail,
+                Const.PLAYER_STATE_JOIN_ROOM, Const.PLAYER_STATE_NONE);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection(Const.COLLECTION_ROOMS).add(room)
+                .addOnSuccessListener(documentReference -> {
+                    String roomDocument = documentReference.getId();
+                    Intent intent = new Intent(context, RoomActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putString(Const.KEY_ROOM_DOCUMENT, roomDocument);
+                    intent.putExtras(bundle);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                })
+                .addOnFailureListener(e -> CommonLogic.makeToast(context, "Error: " + e));
+    }
+
     public static void makeToast(Context context, String string) {
         Toast.makeText(context, string, Toast.LENGTH_LONG).show();
     }

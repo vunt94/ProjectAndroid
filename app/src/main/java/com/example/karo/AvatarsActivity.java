@@ -9,9 +9,7 @@ import android.os.Bundle;
 import android.widget.GridView;
 
 import com.example.karo.adapter.AvatarsAdapter;
-import com.example.karo.adapter.GameBoardAdapter;
 import com.example.karo.model.Avatar;
-import com.example.karo.model.Cell;
 import com.example.karo.utility.CommonLogic;
 import com.example.karo.utility.Const;
 
