@@ -126,14 +126,10 @@ public class RoomsFragment extends Fragment implements ISendStateToRoom {
                         , Integer.parseInt(Objects.requireNonNull(map.get(Const.KEY_PLAYER_ROLE_X_STATE)).toString())
                         , Integer.parseInt(Objects.requireNonNull(map.get(Const.KEY_PLAYER_ROLE_O_STATE)).toString())
                 );
-//                if (room.getPlayerRoleXEmail().isEmpty()) {
-//                    CommonLogic.deleteRoom(requireContext(),document.getId());
-//                }
-//                else {
-                    roomDetail.setRoom(room);
-                    roomDetail.setRoomDocument(document.getId());
-                    loadUserRoleXInfo(roomDetail, stateChangeData);
-                //}
+                roomDetail.setRoom(room);
+                roomDetail.setRoomDocument(document.getId());
+                loadUserRoleXInfo(roomDetail, stateChangeData);
+
             }
         });
     }
@@ -182,8 +178,10 @@ public class RoomsFragment extends Fragment implements ISendStateToRoom {
 
     private void loadUserRoleOInfo(RoomDetail roomDetail, int stateChangeData) {
         if (roomDetail.getRoom().getPlayerRoleOState() == Const.PLAYER_STATE_NONE) {
-            roomDetail.setUserRoleO(null);
-            adapter.setData(roomDetail, stateChangeData);
+            if (roomDetail.getRoom().getPlayerRoleOEmail() == null) {
+                roomDetail.setUserRoleO(null);
+                adapter.setData(roomDetail, stateChangeData);
+            }
         } else {
             FirebaseFirestore db = FirebaseFirestore.getInstance();
             db.collection(Const.COLLECTION_USERS)
@@ -209,7 +207,7 @@ public class RoomsFragment extends Fragment implements ISendStateToRoom {
                                             Const.AVATARS_SOURCE_INTERNAL_PATH + user.getAvatarRef());
                                     user.setAvatarBitmap(bitmap);
                                     roomDetail.setUserRoleO(user);
-                                    adapter.setData(roomDetail, stateChangeData);
+//                                    adapter.setData(roomDetail, stateChangeData);
                                 }
                             } else {
                                 CommonLogic.makeToast(getContext(), "Get user " + roomDetail.getRoom().getPlayerRoleXEmail() + " fail!");

@@ -161,43 +161,11 @@ public class InvitationsFragment extends Fragment implements RoomsAdapter.ISendS
 
     private void loadUserRoleOInfo(RoomDetail roomDetail, int stateChangeData) {
         if (roomDetail.getRoom().getPlayerRoleOState() == Const.PLAYER_STATE_NONE
-                && (roomDetail.getUserRoleO().getEmail() == currentUser.getEmail()
-                || roomDetail.getUserRoleX().getEmail() == currentUser.getEmail())) {
-            invitationsAdapter.setData(roomDetail, stateChangeData);
-        } else {
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            db.collection(Const.COLLECTION_USERS)
-                    .whereEqualTo(Const.KEY_EMAIL, roomDetail.getRoom().getPlayerRoleOEmail())
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            QuerySnapshot querySnapshot = task.getResult();
-                            if (querySnapshot != null && querySnapshot.size() > 0) {
-                                Map<String, Object> map = querySnapshot.getDocuments().get(0).getData();
-                                if (map != null) {
-                                    // get data
-                                    User user = new User(
-                                            Objects.requireNonNull(map.get(Const.KEY_EMAIL)).toString()
-                                            , Objects.requireNonNull(map.get(Const.KEY_PASSWORD)).toString()
-                                            , Objects.requireNonNull(map.get(Const.KEY_USERNAME)).toString()
-                                            , Objects.requireNonNull(map.get(Const.KEY_AVATAR_REF)).toString()
-                                            , Integer.parseInt(Objects.requireNonNull(map.get(Const.KEY_SCORE)).toString())
-                                    );
-
-                                    // get bitmap avatar
-                                    Bitmap bitmap = CommonLogic.loadImageFromInternalStorage(
-                                            Const.AVATARS_SOURCE_INTERNAL_PATH + user.getAvatarRef());
-                                    user.setAvatarBitmap(bitmap);
-                                    roomDetail.setUserRoleO(user);
-                                    invitationsAdapter.setData(roomDetail, stateChangeData);
-                                }
-                            } else {
-                                CommonLogic.makeToast(getContext(), "Get user " + roomDetail.getRoom().getPlayerRoleXEmail() + " fail!");
-                            }
-                        } else {
-                            CommonLogic.makeToast(getContext(), "Error: " + task.getException());
-                        }
-                    });
+                && roomDetail.getRoom().getPlayerRoleXEmail() != null
+                && roomDetail.getRoom().getPlayerRoleOEmail() != null) {
+            if (roomDetail.getRoom().getPlayerRoleOEmail().equals(currentUser.getEmail())){
+                invitationsAdapter.setData(roomDetail, stateChangeData);
+            }
         }
     }
 
